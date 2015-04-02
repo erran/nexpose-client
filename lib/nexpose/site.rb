@@ -739,6 +739,8 @@ module Nexpose
       else
         true
       end
+    rescue IPAddr::InvalidAddressError
+      false
     end
 
     def hash
