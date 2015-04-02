@@ -723,11 +723,14 @@ module Nexpose
       @from == other.from && @to == other.to
     end
 
-    def include?(single_ip)
-      return false unless single_ip.respond_to? :from
+    def include?(subset)
       from = IPAddr.new(@from)
       to = @to.nil? ? from : IPAddr.new(@to)
-      other = IPAddr.new(single_ip)
+      if subset.respond_to?(:from)
+        other = IPAddr.new(subset.from)
+      else
+        other = IPAddr.new(subset)
+      end
 
       if other < from
         false
