@@ -216,7 +216,22 @@ module Nexpose
     #
     # @param [String] ip IP address of an asset.
     def remove_ip(ip)
-      @assets = assets.reject { |asset| asset == IPRange.new(ip) }
+      # Remove any lone IP addresses.
+      assets.reject! { |asset| asset == IPRange.new(ip) }
+
+      # Find any IPRanges that contain the IP we want to remove.
+      ranges_to_alter = assets.grep(IPRange) { |range|
+        range if range.include?(ip)
+      }.compact
+      ranges_to_alter.each do |range|
+        remove_ip_range(range.from, range.to)
+        range.split(ip).each do |(from, to)|
+          add_ip_range(from, to)
+        end
+      end
+
+      # Return the modified assets to maintain the previous functionality
+      assets
     end
 
     # Adds assets to this site by IP address range.
@@ -708,6 +723,18 @@ module Nexpose
       from = IPAddr.new(@from)
       to = IPAddr.new(@to)
       (from..to).to_a.size
+    end
+
+    def split(ip)
+      ip = IPAddr.new(ip) unless ip.is_a?(IPAddr)
+
+      ip_groups = (from..to).group_by { |asset| asset <=> ip }
+      # -1 represents an IP less than the input IP
+      from_before, to_before = Array(ip_groups[-1]).values_at(0, -1)
+      # 1 represents an IP greater than the input IP
+      from_after, to_after = Array(ip_groups[1]).values_at(0, -1)
+
+      [IPRange.new(from_before, to_before), IPRange.new(from_after, to_after)]
     end
 
     include Comparable
