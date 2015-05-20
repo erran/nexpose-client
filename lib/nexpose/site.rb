@@ -465,6 +465,11 @@ module Nexpose
           addresses: @excluded_scan_targets[:addresses].compact,
           asset_groups: @excluded_scan_targets[:asset_groups].compact
       }
+      blackouts = (@blackouts || []).map { |blackout| blackout.to_h }
+      # To maintain backwards compatability send an empty string if no
+      # blackouts were set which will be ignored on older versions of the
+      # Nexpose security console API.
+      blackouts = ''.freeze if blackouts.empty?
 
       {
           id: @id,
@@ -477,7 +482,7 @@ module Nexpose
           scan_template_id: @scan_template_id,
           risk_factor: @risk_factor,
           schedules: (@schedules || []).map {|schedule| schedule.to_h},
-          blackouts: (@blackouts || []).map {|blackout| blackout.to_h},
+          blackouts: blackouts,
           shared_credentials: (@shared_credentials || []).map {|cred| cred.to_h},
           site_credentials: (@site_credentials || []).map {|cred| cred.to_h},
           web_credentials: (@web_credentials || []).map {|webCred| webCred.to_h},
